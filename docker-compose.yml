@@ -1,0 +1,22 @@
+services:
+  api_1:
+    build: ./api_1
+    ports:
+      - "8001:5000"
+    volumes:
+      - shared_storage:/data
+
+  api_2:
+    build: ./api_2
+    ports:
+      - "8002:5000"
+    volumes:
+      - shared_storage:/data
+
+  ui:
+    build: ./frontend
+    ports:
+      - "8080:80"
+
+volumes:
+  shared_storage:
