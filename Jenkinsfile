@@ -12,7 +12,7 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 // This builds your image and starts the container on the VM
-                sh 'docker compose up -d --build'
+                sh 'docker-compose up -d --build'
             }
         }
 
