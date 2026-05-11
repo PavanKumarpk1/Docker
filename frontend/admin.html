@@ -2,86 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Store Admin Dashboard</title>
+    <title>Pro Store Admin</title>
     <style>
-        :root { --primary: #6f42c1; --secondary: #4a90e2; --danger: #dc3545; --success: #28a745; --dark: #343a40; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        :root { --primary: #6f42c1; --secondary: #4a90e2; --danger: #dc3545; --success: #28a745; --dark: #212529; }
+        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f8f9fa; color: #333; }
         
-        /* Navigation */
-        nav { background: var(--dark); color: white; padding: 1rem 2rem; display: flex; gap: 20px; align-items: center; position: sticky; top: 0; z-index: 100; }
+        /* Navigation & Header */
+        nav { background: var(--dark); color: white; padding: 1rem 2rem; display: flex; gap: 25px; align-items: center; position: sticky; top: 0; z-index: 1000; }
         nav h1 { margin: 0; font-size: 1.2rem; flex-grow: 1; color: var(--secondary); }
-        nav a { color: white; text-decoration: none; font-weight: bold; cursor: pointer; opacity: 0.8; }
-        nav a:hover { opacity: 1; }
+        nav a { color: #adb5bd; text-decoration: none; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        nav a:hover, nav a.active { color: white; }
 
-        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px; }
         
-        /* Grid for Inputs */
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
-        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-add { background: var(--success); }
-        .btn-bulk { background: var(--primary); }
+        /* Search Bar */
+        .search-container { margin-bottom: 20px; position: relative; }
+        .search-bar { width: 100%; padding: 12px 40px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .search-bar:focus { border-color: var(--secondary); }
+
+        /* Table Design */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; background: #fdfdfd; padding: 15px; border-bottom: 2px solid #eee; color: #666; font-size: 0.9rem; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; }
         
-        /* Table Styles */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; background: #f8f9fa; padding: 15px; border-bottom: 2px solid #eee; }
-        td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .prod-img { width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #eee; }
+        .prod-img { width: 45px; height: 45px; object-fit: contain; border-radius: 6px; background: #f0f0f0; }
+        input.edit-input { width: 100%; padding: 8px; border: 1px solid var(--secondary); border-radius: 4px; box-sizing: border-box; }
         
-        .action-btns { display: flex; gap: 5px; }
-        .btn-edit { background: var(--secondary); font-size: 0.8rem; }
-        .btn-del { background: var(--danger); font-size: 0.8rem; }
-        
-        #log { background: #222; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-top: 10px; display: none; }
+        .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn-edit { background: #e7f1ff; color: var(--secondary); }
+        .btn-del { background: #fff5f5; color: var(--danger); }
+        .btn-save { background: var(--success); color: white; }
+        .btn-cancel { background: #6c757d; color: white; }
+
         .hidden { display: none; }
+        .action-group { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <h1>Store Admin</h1>
-    <a onclick="showSection('manage')">Inventory List</a>
-    <a onclick="showSection('add')">Add Products</a>
+    <h1>Store Admin Pro</h1>
+    <a onclick="showSection('manage')" id="nav-manage" class="active">Inventory</a>
+    <a onclick="showSection('add')" id="nav-add">Add Products</a>
 </nav>
 
 <div class="container">
     
     <!-- SECTION: ADD / BULK -->
     <div id="section-add" class="card hidden">
-        <h2>Add Individual Product</h2>
-        <div class="input-grid">
-            <div><label>Name</label><input type="text" id="p-name" style="width:100%"></div>
-            <div><label>Price</label><input type="number" id="p-price" style="width:100%"></div>
-            <div><label>Image URL</label><input type="text" id="p-url" style="width:100%"></div>
-            <button class="btn-add" onclick="manualAdd()">Add Now</button>
+        <h2>Manual Entry & Bulk Upload</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 30px;">
+            <div><label>Name</label><input type="text" id="p-name" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
+            <div><label>Price</label><input type="number" id="p-price" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
+            <div><label>Image URL</label><input type="text" id="p-url" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
+            <button class="btn btn-save" onclick="manualAdd()" style="padding:11px 25px;">Add Product</button>
         </div>
 
-        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
-
-        <h2>Bulk JSON Upload</h2>
-        <input type="file" id="bulkFile" accept=".json">
-        <button class="btn-bulk" onclick="handleBulkUpload()">Process Bulk List</button>
-        <div id="log"></div>
+        <div style="padding-top: 20px; border-top: 1px dashed #ccc;">
+            <h3>JSON Bulk Import</h3>
+            <input type="file" id="bulkFile" accept=".json">
+            <button class="btn" style="background:var(--primary); color:white;" onclick="handleBulkUpload()">Start Upload</button>
+        </div>
     </div>
 
-    <!-- SECTION: MANAGE LIST -->
+    <!-- SECTION: INVENTORY LIST -->
     <div id="section-manage" class="card">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h2>Live Inventory</h2>
-            <button class="btn-edit" style="background:#555" onclick="fetchProducts()">Refresh List</button>
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchInput" placeholder="Search by product name..." onkeyup="filterProducts()">
         </div>
+
         <table>
             <thead>
                 <tr>
-                    <th>Image</th>
-                    <th>Product Name</th>
-                    <th>Price</th>
-                    <th>Actions</th>
+                    <th width="80">Image</th>
+                    <th>Product Details</th>
+                    <th width="150">Price</th>
+                    <th width="180">Actions</th>
                 </tr>
             </thead>
             <tbody id="product-list">
-                <!-- Products will load here -->
+                <!-- Data injected here -->
             </tbody>
         </table>
     </div>
@@ -89,109 +90,105 @@
 
 <script>
     const API_URL = "http://34.27.154.69:8003/products";
+    let allProducts = []; // Local cache for searching
 
-    // --- Navigation Logic ---
     function showSection(section) {
-        document.getElementById('section-add').classList.add('hidden');
-        document.getElementById('section-manage').classList.add('hidden');
-        document.getElementById(`section-${section}`).classList.remove('hidden');
+        document.getElementById('section-add').classList.toggle('hidden', section !== 'add');
+        document.getElementById('section-manage').classList.toggle('hidden', section !== 'manage');
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+        document.getElementById(`nav-${section}`).classList.add('active');
         if(section === 'manage') fetchProducts();
     }
 
-    // --- Fetch & Display ---
     async function fetchProducts() {
-        const tbody = document.getElementById('product-list');
-        tbody.innerHTML = "<tr><td colspan='4'>Loading inventory...</td></tr>";
         try {
             const res = await fetch(API_URL);
-            const products = await res.json();
-            tbody.innerHTML = "";
-            products.forEach(p => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><img src="${p.image_url}" class="prod-img"></td>
-                        <td><strong>${p.name}</strong></td>
-                        <td>$${p.price}</td>
-                        <td class="action-btns">
-                            <button class="btn-edit" onclick="editPrompt('${p.name}', ${p.price}, '${p.image_url}')">Edit</button>
-                            <button class="btn-del" onclick="deleteProduct('${p.name}')">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } catch (e) { tbody.innerHTML = "<tr><td colspan='4'>Error loading products.</td></tr>"; }
+            allProducts = await res.json();
+            renderTable(allProducts);
+        } catch (e) { console.error("Fetch error", e); }
     }
 
-    // --- Add Functions ---
-    async function postToAPI(data) {
-        return fetch(API_URL, {
+    function renderTable(data) {
+        const tbody = document.getElementById('product-list');
+        tbody.innerHTML = data.map((p, index) => `
+            <tr id="row-${index}">
+                <td><img src="${p.image_url}" class="prod-img"></td>
+                <td>
+                    <div class="view-mode"><strong>${p.name}</strong></div>
+                    <div class="edit-mode hidden">
+                        <input type="text" class="edit-input" id="edit-name-${index}" value="${p.name}" placeholder="Name">
+                        <input type="text" class="edit-input" id="edit-url-${index}" value="${p.image_url}" placeholder="Image URL" style="margin-top:5px; font-size:11px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="view-mode">$${p.price}</div>
+                    <div class="edit-mode hidden">
+                        <input type="number" class="edit-input" id="edit-price-${index}" value="${p.price}">
+                    </div>
+                </td>
+                <td>
+                    <div class="view-mode action-group">
+                        <button class="btn btn-edit" onclick="toggleEdit(${index}, true)">Edit</button>
+                        <button class="btn btn-del" onclick="deleteProduct('${p.name}')">Delete</button>
+                    </div>
+                    <div class="edit-mode action-group hidden">
+                        <button class="btn btn-save" onclick="saveEdit(${index}, '${p.name}')">Save</button>
+                        <button class="btn btn-cancel" onclick="toggleEdit(${index}, false)">Cancel</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterProducts() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query));
+        renderTable(filtered);
+    }
+
+    function toggleEdit(index, isEditing) {
+        const row = document.getElementById(`row-${index}`);
+        row.querySelectorAll('.view-mode').forEach(el => el.classList.toggle('hidden', isEditing));
+        row.querySelectorAll('.edit-mode').forEach(el => el.classList.toggle('hidden', !isEditing));
+    }
+
+    async function saveEdit(index, oldName) {
+        const newName = document.getElementById(`edit-name-${index}`).value;
+        const newPrice = document.getElementById(`edit-price-${index}`).value;
+        const newUrl = document.getElementById(`edit-url-${index}`).value;
+
+        // 1. Delete old
+        await fetch(`${API_URL}/${encodeURIComponent(oldName)}`, { method: 'DELETE' });
+        // 2. Post new
+        await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ name: newName, price: parseInt(newPrice), image_url: newUrl })
         });
+        
+        fetchProducts();
+    }
+
+    async function deleteProduct(name) {
+        if(!confirm(`Delete ${name}?`)) return;
+        await fetch(`${API_URL}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        fetchProducts();
     }
 
     async function manualAdd() {
-        const data = {
-            name: document.getElementById('p-name').value,
-            price: parseInt(document.getElementById('p-price').value),
-            image_url: document.getElementById('p-url').value
-        };
-        const res = await postToAPI(data);
-        if(res.ok) { alert("Added!"); showSection('manage'); }
-        else { alert("Error adding product"); }
-    }
-
-    // --- Delete Function ---
-    async function deleteProduct(name) {
-        if(!confirm(`Are you sure you want to delete ${name}?`)) return;
-        try {
-            const res = await fetch(`${API_URL}/${encodeURIComponent(name)}`, { method: 'DELETE' });
-            if(res.ok) fetchProducts();
-            else alert("Could not delete. Check if delete route exists in API.");
-        } catch(e) { alert("Connection Error"); }
-    }
-
-    // --- Edit Function (Uses Delete + Add logic to simulate update) ---
-    async function editPrompt(oldName, oldPrice, oldUrl) {
-        const newName = prompt("New Name:", oldName);
-        const newPrice = prompt("New Price:", oldPrice);
-        const newUrl = prompt("New Image URL:", oldUrl);
+        const name = document.getElementById('p-name').value;
+        const price = document.getElementById('p-price').value;
+        const url = document.getElementById('p-url').value;
         
-        if (newName && newPrice) {
-            // First delete old, then add new
-            await fetch(`${API_URL}/${encodeURIComponent(oldName)}`, { method: 'DELETE' });
-            await postToAPI({ name: newName, price: parseInt(newPrice), image_url: newUrl });
-            fetchProducts();
-        }
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, price: parseInt(price), image_url: url })
+        });
+        showSection('manage');
     }
 
-    // --- Bulk Logic ---
-    function logMessage(msg) {
-        const log = document.getElementById('log');
-        log.style.display = "block";
-        log.innerHTML += `<div>> ${msg}</div>`;
-    }
-
-    async function handleBulkUpload() {
-        const file = document.getElementById('bulkFile').files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const products = JSON.parse(e.target.result);
-            for(let p of products) {
-                const res = await postToAPI(p);
-                logMessage(res.ok ? `✅ Added ${p.name}` : `❌ Failed ${p.name}`);
-            }
-            alert("Bulk upload finished");
-            showSection('manage');
-        };
-        reader.readAsText(file);
-    }
-
-    // Initial Load
     fetchProducts();
 </script>
-
 </body>
 </html>
