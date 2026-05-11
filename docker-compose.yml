@@ -13,11 +13,10 @@ services:
     volumes:
       - shared_storage:/data
 
-  # NEW SERVICE: Product Catalog API
   api_3:
     build: ./api_3
     ports:
-      - "8003:8003" # Matches the port in your main.py and HTML fetch
+      - "8003:8003"
     restart: always
 
   ui:
