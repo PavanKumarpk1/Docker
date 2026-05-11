@@ -4,7 +4,7 @@ import uvicorn
 
 app = FastAPI()
 
-# Enable CORS so your HTML file can talk to this API
+# Enable CORS so the Frontend UI can fetch data
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,26 +14,10 @@ app.add_middleware(
 
 @app.get("/products")
 async def get_products():
-    # This matches the structure expected by the JavaScript fetch function
     return [
-        {
-            "name": "Docker Container Pro",
-            "price": 49.99,
-            "description": "High-performance container optimized for scale.",
-            "image_url": "https://img.icons8.com/color/144/docker.png"
-        },
-        {
-            "name": "Kubernetes Orchestrator",
-            "price": 89.99,
-            "description": "The ultimate tool for managing container clusters.",
-            "image_url": "https://img.icons8.com/color/144/kubernetes.png"
-        },
-        {
-            "name": "Jenkins CI Pipeline",
-            "price": 29.99,
-            "description": "Automate your builds with this pre-configured image.",
-            "image_url": "https://img.icons8.com/color/144/jenkins.png"
-        }
+        {"name": "Storage Node", "price": 25, "image_url": "https://img.icons8.com/color/144/database.png"},
+        {"name": "Compute Unit", "price": 50, "image_url": "https://img.icons8.com/color/144/cpu.png"},
+        {"name": "Network Bridge", "price": 15, "image_url": "https://img.icons8.com/color/144/router.png"}
     ]
 
 if __name__ == "__main__":
