@@ -1,2 +1,4 @@
 FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/index.html
+# This copies index.html, admin.html, and anything else in the folder
+COPY . /usr/share/nginx/html/
+EXPOSE 80
