@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from tinydb import TinyDB, Query
 import uvicorn
 
 app = FastAPI()
+# This creates a file called db.json in your container
+db = TinyDB('db.json')
 
-# Enable CORS so the Frontend UI can fetch data
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -12,13 +15,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class Product(BaseModel):
+    name: str
+    price: int
+    image_url: str
+
 @app.get("/products")
 async def get_products():
-    return [
-        {"name": "Storage Node", "price": 25, "image_url": "https://img.icons8.com/color/144/database.png"},
-        {"name": "Compute Unit", "price": 50, "image_url": "https://img.icons8.com/color/144/cpu.png"},
-        {"name": "Network Bridge", "price": 15, "image_url": "https://img.icons8.com/color/144/router.png"}
-    ]
+    return db.all()
+
+@app.post("/products")
+async def add_product(product: Product):
+    db.insert(product.dict())
+    return {"message": "Product added successfully"}
+
+@app.delete("/products/{name}")
+async def delete_product(name: str):
+    ProductQuery = Query()
+    removed = db.remove(ProductQuery.name == name)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product deleted"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8003)
