@@ -22,7 +22,7 @@ pipeline {
                     
                     // Using 'docker compose' (no hyphen) as it is the most stable for modern Jenkins agents
                     // We keep DOCKER_BUILDKIT=0 to match your successful previous runs
-                    sh 'DOCKER_BUILDKIT=0 docker compose up -d --build'
+                    sh 'DOCKER_BUILDKIT=0 docker-compose up -d --build'
                 }
             }
         }
