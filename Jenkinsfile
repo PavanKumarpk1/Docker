@@ -19,7 +19,7 @@ pipeline {
                 }
             }
         }
-        }
+        
 
         stage('Final Verification') {
             steps {
