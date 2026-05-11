@@ -21,10 +21,11 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy') {
+      stage('Build & Deploy') {
             steps {
-                // Using your exact command from the last successful run
-                sh 'DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker-compose up -d --build'
+                // Use 'docker compose' (space) instead of 'docker-compose' (hyphen)
+                // This uses the built-in plugin which usually avoids permission issues
+                sh 'DOCKER_BUILDKIT=0 docker compose up -d --build'
             }
         }
 
