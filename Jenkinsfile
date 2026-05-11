@@ -1,50 +1,45 @@
 pipeline {
     agent any
 
-    environment {
-        // Ensuring common paths are available
-        PATH = "/usr/local/bin:/usr/bin:/bin:${env.PATH}"
-    }
-
     stages {
-        stage('Cleanup') {
-            steps {
-                echo 'Cleaning up workspace...'
-                // Optional: Uncomment the line below if you want to remove old images to save space
-                // sh 'docker image prune -f'
-            }
-        }
-
-        stage('Build & Deploy') {
+        stage('Stop Existing') {
             steps {
                 script {
-                    echo 'Starting build of all services (API_1, API_2, API_3, and UI)...'
-                    
-                    // Using 'docker compose' (no hyphen) as it is the most stable for modern Jenkins agents
-                    // We keep DOCKER_BUILDKIT=0 to match your successful previous runs
-                    sh 'DOCKER_BUILDKIT=0 docker-compose up -d --build'
+                    // Stop and remove old containers to avoid "name already in use" errors
+                    sh 'docker stop api_1 api_2 api_3 ui || true'
+                    sh 'docker rm api_1 api_2 api_3 ui || true'
                 }
             }
         }
 
-        stage('Verify Health') {
+        stage('Build Images') {
             steps {
-                echo 'Checking running containers...'
-                sh 'docker ps'
-                
-                echo 'Verifying API_3 is reachable...'
-                // This local check confirms the container is responding within the network
-                sh 'curl -f http://localhost:8003/products || echo "Warning: API_3 not responding yet"'
+                sh 'docker build -t my-api-1 ./api_1'
+                sh 'docker build -t my-api-2 ./api_2'
+                sh 'docker build -t my-api-3 ./api_3'
+                sh 'docker build -t my-ui ./frontend'
             }
         }
-    }
 
-    post {
-        success {
-            echo 'Deployment successful! Your product catalog is now live.'
+        stage('Run Containers') {
+            steps {
+                // api_1 & api_2 with shared volume
+                sh 'docker run -d --name api_1 -p 8001:5000 -v shared_storage:/data my-api-1'
+                sh 'docker run -d --name api_2 -p 8002:5000 -v shared_storage:/data my-api-2'
+                
+                // api_3 (The new one)
+                sh 'docker run -d --name api_3 -p 8003:8003 my-api-3'
+                
+                // Frontend UI
+                sh 'docker run -d --name ui -p 80:80 my-ui'
+            }
         }
-        failure {
-            echo 'Deployment failed. Check the logs above for Docker build errors.'
+
+        stage('Verify') {
+            steps {
+                sh 'docker ps'
+                echo 'Deployment finished without using Docker Compose!'
+            }
         }
     }
 }
