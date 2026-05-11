@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        // Adds common install locations to the PATH so Jenkins can find docker-compose
-        PATH = "/usr/local/bin:/usr/bin:/bin:${env.PATH}"
-    }
-
     stages {
         stage('Clone') {
             steps {
@@ -16,8 +11,11 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
-                    // Using 'sh' with the explicit path check
-                    sh 'DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 /usr/bin/docker-compose up -d --build'
+                    // This block finds where docker-compose is and uses it directly
+                    def composePath = sh(script: "which docker-compose || echo '/usr/local/bin/docker-compose'", returnStdout: true).trim()
+                    echo "Using docker-compose located at: ${composePath}"
+                    
+                    sh "DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 ${composePath} up -d --build"
                 }
             }
         }
@@ -25,7 +23,7 @@ pipeline {
         stage('Verify') {
             steps {
                 sh 'docker ps'
-                echo 'Deployment of API_1, API_2, and API_3 is complete!'
+                echo 'API_3 and the rest of the stack are now running!'
             }
         }
     }
