@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     // Using 'sh' with the explicit path check
-                    sh 'DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker-compose up -d --build'
+                    sh 'DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 /usr/bin/docker-compose up -d --build'
                 }
             }
         }
