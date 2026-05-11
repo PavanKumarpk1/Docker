@@ -2,97 +2,195 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bulk Product Manager</title>
+    <title>Store Admin Dashboard</title>
     <style>
-        body { font-family: sans-serif; padding: 40px; background: #f0f2f5; display: flex; justify-content: center; }
-        .admin-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        .section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        h2 { margin-top: 0; color: #333; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="file"] { margin-bottom: 15px; }
-        button { 
-            width: 100%; padding: 12px; border-radius: 6px; border: none; 
-            cursor: pointer; font-weight: bold; transition: 0.3s;
-        }
-        .btn-bulk { background: #6f42c1; color: white; }
-        .btn-bulk:hover { background: #59359a; }
-        #log { 
-            margin-top: 20px; max-height: 200px; overflow-y: auto; 
-            font-size: 13px; padding: 10px; background: #222; color: #0f0; border-radius: 4px; display: none;
-        }
+        :root { --primary: #6f42c1; --secondary: #4a90e2; --danger: #dc3545; --success: #28a745; --dark: #343a40; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        
+        /* Navigation */
+        nav { background: var(--dark); color: white; padding: 1rem 2rem; display: flex; gap: 20px; align-items: center; position: sticky; top: 0; z-index: 100; }
+        nav h1 { margin: 0; font-size: 1.2rem; flex-grow: 1; color: var(--secondary); }
+        nav a { color: white; text-decoration: none; font-weight: bold; cursor: pointer; opacity: 0.8; }
+        nav a:hover { opacity: 1; }
+
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        
+        /* Grid for Inputs */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-add { background: var(--success); }
+        .btn-bulk { background: var(--primary); }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; background: #f8f9fa; padding: 15px; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .prod-img { width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #eee; }
+        
+        .action-btns { display: flex; gap: 5px; }
+        .btn-edit { background: var(--secondary); font-size: 0.8rem; }
+        .btn-del { background: var(--danger); font-size: 0.8rem; }
+        
+        #log { background: #222; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-top: 10px; display: none; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="admin-card">
-    <h2>Bulk Product Upload</h2>
-    <div class="section">
-        <label>Upload JSON File</label>
-        <p style="font-size: 12px; color: #666;">File must be a JSON array of products.</p>
+<nav>
+    <h1>Store Admin</h1>
+    <a onclick="showSection('manage')">Inventory List</a>
+    <a onclick="showSection('add')">Add Products</a>
+</nav>
+
+<div class="container">
+    
+    <!-- SECTION: ADD / BULK -->
+    <div id="section-add" class="card hidden">
+        <h2>Add Individual Product</h2>
+        <div class="input-grid">
+            <div><label>Name</label><input type="text" id="p-name" style="width:100%"></div>
+            <div><label>Price</label><input type="number" id="p-price" style="width:100%"></div>
+            <div><label>Image URL</label><input type="text" id="p-url" style="width:100%"></div>
+            <button class="btn-add" onclick="manualAdd()">Add Now</button>
+        </div>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+        <h2>Bulk JSON Upload</h2>
         <input type="file" id="bulkFile" accept=".json">
         <button class="btn-bulk" onclick="handleBulkUpload()">Process Bulk List</button>
+        <div id="log"></div>
     </div>
 
-    <div id="log"></div>
+    <!-- SECTION: MANAGE LIST -->
+    <div id="section-manage" class="card">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h2>Live Inventory</h2>
+            <button class="btn-edit" style="background:#555" onclick="fetchProducts()">Refresh List</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="product-list">
+                <!-- Products will load here -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    // Update with your actual Server IP
     const API_URL = "http://34.27.154.69:8003/products";
 
+    // --- Navigation Logic ---
+    function showSection(section) {
+        document.getElementById('section-add').classList.add('hidden');
+        document.getElementById('section-manage').classList.add('hidden');
+        document.getElementById(`section-${section}`).classList.remove('hidden');
+        if(section === 'manage') fetchProducts();
+    }
+
+    // --- Fetch & Display ---
+    async function fetchProducts() {
+        const tbody = document.getElementById('product-list');
+        tbody.innerHTML = "<tr><td colspan='4'>Loading inventory...</td></tr>";
+        try {
+            const res = await fetch(API_URL);
+            const products = await res.json();
+            tbody.innerHTML = "";
+            products.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${p.image_url}" class="prod-img"></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>$${p.price}</td>
+                        <td class="action-btns">
+                            <button class="btn-edit" onclick="editPrompt('${p.name}', ${p.price}, '${p.image_url}')">Edit</button>
+                            <button class="btn-del" onclick="deleteProduct('${p.name}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (e) { tbody.innerHTML = "<tr><td colspan='4'>Error loading products.</td></tr>"; }
+    }
+
+    // --- Add Functions ---
+    async function postToAPI(data) {
+        return fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+    }
+
+    async function manualAdd() {
+        const data = {
+            name: document.getElementById('p-name').value,
+            price: parseInt(document.getElementById('p-price').value),
+            image_url: document.getElementById('p-url').value
+        };
+        const res = await postToAPI(data);
+        if(res.ok) { alert("Added!"); showSection('manage'); }
+        else { alert("Error adding product"); }
+    }
+
+    // --- Delete Function ---
+    async function deleteProduct(name) {
+        if(!confirm(`Are you sure you want to delete ${name}?`)) return;
+        try {
+            const res = await fetch(`${API_URL}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            if(res.ok) fetchProducts();
+            else alert("Could not delete. Check if delete route exists in API.");
+        } catch(e) { alert("Connection Error"); }
+    }
+
+    // --- Edit Function (Uses Delete + Add logic to simulate update) ---
+    async function editPrompt(oldName, oldPrice, oldUrl) {
+        const newName = prompt("New Name:", oldName);
+        const newPrice = prompt("New Price:", oldPrice);
+        const newUrl = prompt("New Image URL:", oldUrl);
+        
+        if (newName && newPrice) {
+            // First delete old, then add new
+            await fetch(`${API_URL}/${encodeURIComponent(oldName)}`, { method: 'DELETE' });
+            await postToAPI({ name: newName, price: parseInt(newPrice), image_url: newUrl });
+            fetchProducts();
+        }
+    }
+
+    // --- Bulk Logic ---
     function logMessage(msg) {
-        const logDiv = document.getElementById('log');
-        logDiv.style.display = "block";
-        logDiv.innerHTML += `<div>> ${msg}</div>`;
-        logDiv.scrollTop = logDiv.scrollHeight;
+        const log = document.getElementById('log');
+        log.style.display = "block";
+        log.innerHTML += `<div>> ${msg}</div>`;
     }
 
     async function handleBulkUpload() {
-        const fileInput = document.getElementById('bulkFile');
-        const file = fileInput.files[0];
-        
-        if (!file) {
-            alert("Please select a JSON file first!");
-            return;
-        }
-
+        const file = document.getElementById('bulkFile').files[0];
+        if(!file) return;
         const reader = new FileReader();
-        reader.onload = async function(e) {
-            try {
-                const products = JSON.parse(e.target.result);
-                
-                if (!Array.isArray(products)) {
-                    logMessage("Error: JSON must be an Array [{}, {}]");
-                    return;
-                }
-
-                logMessage(`Found ${products.length} products. Starting upload...`);
-
-                for (let item of products) {
-                    try {
-                        const response = await fetch(API_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item)
-                        });
-
-                        if (response.ok) {
-                            logMessage(`✅ Added: ${item.name}`);
-                        } else {
-                            logMessage(`❌ Product error occurred for ${item.name}: ${response.statusText}`);
-                        }
-                    } catch (err) {
-                        logMessage(`❌ Failed to reach API for ${item.name}`);
-                    }
-                }
-                logMessage("--- Bulk Processing Finished ---");
-
-            } catch (err) {
-                logMessage("❌ Error: Invalid JSON file format.");
+        reader.onload = async (e) => {
+            const products = JSON.parse(e.target.result);
+            for(let p of products) {
+                const res = await postToAPI(p);
+                logMessage(res.ok ? `✅ Added ${p.name}` : `❌ Failed ${p.name}`);
             }
+            alert("Bulk upload finished");
+            showSection('manage');
         };
         reader.readAsText(file);
     }
+
+    // Initial Load
+    fetchProducts();
 </script>
 
 </body>
