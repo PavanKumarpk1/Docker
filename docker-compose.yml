@@ -13,10 +13,12 @@ services:
     volumes:
       - shared_storage:/data
 
-  api_3:
+api_3:
     build: ./api_3
     ports:
       - "8003:8003"
+    volumes:
+      - ./api_3/db.json:/app/db.json
     restart: always
 
   ui:
