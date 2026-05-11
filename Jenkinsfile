@@ -11,11 +11,9 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
-                    // This block finds where docker-compose is and uses it directly
-                    def composePath = sh(script: "which docker-compose || echo '/usr/local/bin/docker-compose'", returnStdout: true).trim()
-                    echo "Using docker-compose located at: ${composePath}"
-                    
-                    sh "DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 ${composePath} up -d --build"
+                    // We switch to 'docker compose' (no hyphen) 
+                    // This uses the Docker CLI plugin which is standard in modern Docker installs
+                    sh 'DOCKER_BUILDKIT=0 docker compose up -d --build'
                 }
             }
         }
@@ -23,7 +21,7 @@ pipeline {
         stage('Verify') {
             steps {
                 sh 'docker ps'
-                echo 'API_3 and the rest of the stack are now running!'
+                echo 'Deployment successful using Docker Compose V2!'
             }
         }
     }
