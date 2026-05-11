@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pro Store Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Store Admin Dashboard</title>
     <style>
         :root { --primary: #6f42c1; --secondary: #4a90e2; --danger: #dc3545; --success: #28a745; --dark: #212529; }
         body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f8f9fa; color: #333; }
         
-        /* Navigation & Header */
+        /* Navigation */
         nav { background: var(--dark); color: white; padding: 1rem 2rem; display: flex; gap: 25px; align-items: center; position: sticky; top: 0; z-index: 1000; }
         nav h1 { margin: 0; font-size: 1.2rem; flex-grow: 1; color: var(--secondary); }
         nav a { color: #adb5bd; text-decoration: none; font-weight: 500; cursor: pointer; transition: 0.2s; }
@@ -16,20 +17,20 @@
         .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px; }
         
-        /* Search Bar */
-        .search-container { margin-bottom: 20px; position: relative; }
-        .search-bar { width: 100%; padding: 12px 40px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        /* Search */
+        .search-container { margin-bottom: 20px; }
+        .search-bar { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; box-sizing: border-box; }
         .search-bar:focus { border-color: var(--secondary); }
 
-        /* Table Design */
+        /* Table */
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; background: #fdfdfd; padding: 15px; border-bottom: 2px solid #eee; color: #666; font-size: 0.9rem; }
+        th { text-align: left; background: #fdfdfd; padding: 15px; border-bottom: 2px solid #eee; color: #666; }
         td { padding: 12px 15px; border-bottom: 1px solid #eee; }
         
-        .prod-img { width: 45px; height: 45px; object-fit: contain; border-radius: 6px; background: #f0f0f0; }
-        input.edit-input { width: 100%; padding: 8px; border: 1px solid var(--secondary); border-radius: 4px; box-sizing: border-box; }
+        .prod-img { width: 50px; height: 50px; object-fit: contain; border-radius: 6px; background: #f0f0f0; }
+        .edit-input { width: 100%; padding: 8px; border: 1px solid var(--secondary); border-radius: 4px; box-sizing: border-box; margin-bottom: 4px; }
         
-        .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
         .btn-edit { background: #e7f1ff; color: var(--secondary); }
         .btn-del { background: #fff5f5; color: var(--danger); }
         .btn-save { background: var(--success); color: white; }
@@ -51,22 +52,22 @@
     
     <!-- SECTION: ADD / BULK -->
     <div id="section-add" class="card hidden">
-        <h2>Manual Entry & Bulk Upload</h2>
+        <h2>Manual Entry</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 30px;">
-            <div><label>Name</label><input type="text" id="p-name" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
-            <div><label>Price</label><input type="number" id="p-price" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
-            <div><label>Image URL</label><input type="text" id="p-url" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
-            <button class="btn btn-save" onclick="manualAdd()" style="padding:11px 25px;">Add Product</button>
+            <div><label>Name</label><input type="text" id="p-name" class="edit-input" style="border: 1px solid #ddd;"></div>
+            <div><label>Price</label><input type="number" id="p-price" class="edit-input" style="border: 1px solid #ddd;"></div>
+            <div><label>Image URL</label><input type="text" id="p-url" class="edit-input" style="border: 1px solid #ddd;"></div>
+            <button class="btn btn-save" onclick="manualAdd()" style="padding:10px 25px;">Add Product</button>
         </div>
 
         <div style="padding-top: 20px; border-top: 1px dashed #ccc;">
             <h3>JSON Bulk Import</h3>
             <input type="file" id="bulkFile" accept=".json">
-            <button class="btn" style="background:var(--primary); color:white;" onclick="handleBulkUpload()">Start Upload</button>
+            <button id="uploadBtn" class="btn" style="background:var(--primary); color:white;">Start Upload</button>
         </div>
     </div>
 
-    <!-- SECTION: INVENTORY LIST -->
+    <!-- SECTION: INVENTORY -->
     <div id="section-manage" class="card">
         <div class="search-container">
             <input type="text" class="search-bar" id="searchInput" placeholder="Search by product name..." onkeyup="filterProducts()">
@@ -82,7 +83,7 @@
                 </tr>
             </thead>
             <tbody id="product-list">
-                <!-- Data injected here -->
+                <!-- Loaded via JS -->
             </tbody>
         </table>
     </div>
@@ -90,8 +91,9 @@
 
 <script>
     const API_URL = "http://34.27.154.69:8003/products";
-    let allProducts = []; // Local cache for searching
+    let allProducts = [];
 
+    // --- SECTION SWITCHING ---
     function showSection(section) {
         document.getElementById('section-add').classList.toggle('hidden', section !== 'add');
         document.getElementById('section-manage').classList.toggle('hidden', section !== 'manage');
@@ -100,12 +102,13 @@
         if(section === 'manage') fetchProducts();
     }
 
+    // --- FETCH & RENDER ---
     async function fetchProducts() {
         try {
             const res = await fetch(API_URL);
             allProducts = await res.json();
             renderTable(allProducts);
-        } catch (e) { console.error("Fetch error", e); }
+        } catch (e) { console.error("Fetch Error:", e); }
     }
 
     function renderTable(data) {
@@ -116,15 +119,13 @@
                 <td>
                     <div class="view-mode"><strong>${p.name}</strong></div>
                     <div class="edit-mode hidden">
-                        <input type="text" class="edit-input" id="edit-name-${index}" value="${p.name}" placeholder="Name">
-                        <input type="text" class="edit-input" id="edit-url-${index}" value="${p.image_url}" placeholder="Image URL" style="margin-top:5px; font-size:11px;">
+                        <input type="text" class="edit-input" id="edit-name-${index}" value="${p.name}">
+                        <input type="text" class="edit-input" id="edit-url-${index}" value="${p.image_url}" style="font-size:11px;">
                     </div>
                 </td>
                 <td>
                     <div class="view-mode">$${p.price}</div>
-                    <div class="edit-mode hidden">
-                        <input type="number" class="edit-input" id="edit-price-${index}" value="${p.price}">
-                    </div>
+                    <div class="edit-mode hidden"><input type="number" class="edit-input" id="edit-price-${index}" value="${p.price}"></div>
                 </td>
                 <td>
                     <div class="view-mode action-group">
@@ -140,6 +141,7 @@
         `).join('');
     }
 
+    // --- CORE ACTIONS ---
     function filterProducts() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query));
@@ -157,15 +159,13 @@
         const newPrice = document.getElementById(`edit-price-${index}`).value;
         const newUrl = document.getElementById(`edit-url-${index}`).value;
 
-        // 1. Delete old
+        // Simulate Update: Delete then POST
         await fetch(`${API_URL}/${encodeURIComponent(oldName)}`, { method: 'DELETE' });
-        // 2. Post new
         await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName, price: parseInt(newPrice), image_url: newUrl })
         });
-        
         fetchProducts();
     }
 
@@ -179,16 +179,47 @@
         const name = document.getElementById('p-name').value;
         const price = document.getElementById('p-price').value;
         const url = document.getElementById('p-url').value;
-        
+        if(!name || !price) return alert("Fill Name and Price");
+
         await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, price: parseInt(price), image_url: url })
         });
+        document.getElementById('p-name').value = '';
+        document.getElementById('p-price').value = '';
+        document.getElementById('p-url').value = '';
         showSection('manage');
     }
 
+    // --- BULK UPLOAD (Wired with EventListener for reliability) ---
+    document.getElementById('uploadBtn').addEventListener('click', async () => {
+        const fileInput = document.getElementById('bulkFile');
+        const file = fileInput.files[0];
+        if (!file) return alert("Select a JSON file!");
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const products = JSON.parse(e.target.result);
+                for (const item of products) {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
+                }
+                alert("Bulk Upload Complete!");
+                fileInput.value = "";
+                showSection('manage');
+            } catch (err) { alert("JSON Error: " + err.message); }
+        };
+        reader.readAsText(file);
+    });
+
+    // Initial load
     fetchProducts();
 </script>
+
 </body>
 </html>
