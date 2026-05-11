@@ -6,4 +6,4 @@ COPY . .
 # Ensure the database file exists and has permissions
 RUN touch db.json && chmod 666 db.json
 EXPOSE 8003
-CMD ["python", "app.py"]
+CMD ["python", "main.py"]
