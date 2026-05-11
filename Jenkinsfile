@@ -1,38 +1,35 @@
 pipeline {
     agent any
 
-    environment {
-        // This forces Jenkins to look where Docker and Compose are usually installed
-        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
-    }
-
     stages {
-        stage('Clone') {
+        stage('Deploy All Services') {
             steps {
-                echo 'Source code pulled successfully.'
+                script {
+                    echo 'Cleaning up old containers...'
+                    // We use '|| true' so the pipeline doesn't fail if the containers don't exist yet
+                    sh 'docker stop api_1 api_2 api_3 ui || true'
+                    sh 'docker rm api_1 api_2 api_3 ui || true'
+
+                    echo 'Building Images...'
+                    sh 'DOCKER_BUILDKIT=0 docker build -t my-api-1 ./api_1'
+                    sh 'DOCKER_BUILDKIT=0 docker build -t my-api-2 ./api_2'
+                    sh 'DOCKER_BUILDKIT=0 docker build -t my-api-3 ./api_3'
+                    sh 'DOCKER_BUILDKIT=0 docker build -t my-ui ./frontend'
+
+                    echo 'Launching Containers...'
+                    // Launching them individually to match your compose setup
+                    sh 'docker run -d --name api_1 -p 8001:5000 -v shared_storage:/data my-api-1'
+                    sh 'docker run -d --name api_2 -p 8002:5000 -v shared_storage:/data my-api-2'
+                    sh 'docker run -d --name api_3 -p 8003:8003 my-api-3'
+                    sh 'docker run -d --name ui -p 80:80 my-ui'
+                }
             }
         }
 
-        stage('Pre-Flight Check') {
-            steps {
-                // This checks if the Docker engine is actually reachable
-                sh 'docker info || echo "ERROR: Docker socket not reachable"'
-                sh 'which docker-compose || echo "ERROR: docker-compose binary not found"'
-            }
-        }
-
-      stage('Build & Deploy') {
-            steps {
-                // Use 'docker compose' (space) instead of 'docker-compose' (hyphen)
-                // This uses the built-in plugin which usually avoids permission issues
-                sh 'DOCKER_BUILDKIT=0 docker compose up -d --build'
-            }
-        }
-
-        stage('Verify') {
+        stage('Final Verification') {
             steps {
                 sh 'docker ps'
-                echo 'The new version (including API_3) is officially live!'
+                echo 'All services, including the new API_3, are now running!'
             }
         }
     }
