@@ -105,8 +105,7 @@
         const tbody = document.getElementById('product-list');
         tbody.innerHTML = data.map((p, index) => `
             <tr id="row-${index}">
-                // Change this line in your renderTable function
-<td><img src="${p.image_url}" class="prod-img" onerror="this.src='https://placehold.co/50x50?text=Error'"></td>
+                <td><img src="${p.image_url}" class="prod-img" onerror="this.src='https://placehold.co/50x50?text=Error'"></td>
                 <td>
                     <div class="view-mode"><strong>${p.name}</strong></div>
                     <div class="edit-mode hidden">
