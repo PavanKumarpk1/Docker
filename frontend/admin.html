@@ -1,48 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Product Manager</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Management - Admin</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 400px; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #28a745; color: white; border: none; padding: 10px 15px; cursor: pointer; width: 100%; }
-        button:hover { background: #218838; }
-        #status { margin-top: 10px; color: blue; }
+        :root {
+            --primary: #4a90e2;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f8f9fa;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 40px; display: flex; justify-content: center; }
+        .admin-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #333; margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], input[type="number"], input[type="file"] {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;
+        }
+        button { 
+            width: 100%; background: var(--primary); color: white; border: none; padding: 12px; 
+            border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s;
+        }
+        button:hover { background: #357abd; }
+        #status { margin-top: 20px; padding: 10px; border-radius: 6px; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>Manage Store Products</h2>
-    <div class="card">
-        <h3>Add New Product</h3>
-        <input type="text" id="name" placeholder="Product Name (e.g. GPU)">
-        <input type="number" id="price" placeholder="Price (e.g. 299)">
-        <input type="text" id="url" placeholder="Image URL (from Icons8)">
-        <button onclick="addProduct()">Add Product</button>
-        <div id="status"></div>
+
+<div class="admin-card">
+    <h2>Add New Product</h2>
+    
+    <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="name" placeholder="e.g., Cloud Server">
     </div>
 
-    <script>
-        async function addProduct() {
-            const data = {
-                name: document.getElementById('name').value,
-                price: parseInt(document.getElementById('price').value),
-                image_url: document.getElementById('url').value
+    <div class="form-group">
+        <label>Price ($)</label>
+        <input type="number" id="price" placeholder="e.g., 99">
+    </div>
+
+    <div class="form-group">
+        <label>Upload Image</label>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <button onclick="processAndUpload()">Create Product</button>
+
+    <div id="status"></div>
+</div>
+
+<script>
+    // Replace this with your actual Server IP
+    const API_URL = "http://YOUR_SERVER_IP:8003/products";
+
+    function showStatus(msg, isError) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.display = "block";
+        statusDiv.style.backgroundColor = isError ? "#f8d7da" : "#d4edda";
+        statusDiv.style.color = isError ? "#721c24" : "#155724";
+        statusDiv.innerText = msg;
+    }
+
+    function processAndUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const name = document.getElementById('name').value;
+        const price = document.getElementById('price').value;
+        const file = fileInput.files[0];
+
+        // Basic Front-end validation
+        if (!name || !price || !file) {
+            showStatus("All fields are required!", true);
+            return;
+        }
+
+        const reader = new FileReader();
+
+        // Triggered when file reading is complete
+        reader.onloadend = async function() {
+            const base64Image = reader.result;
+
+            const payload = {
+                name: name,
+                price: parseInt(price),
+                image_url: base64Image
             };
 
-            const response = await fetch('http://YOUR_SERVER_IP:8003/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            if (response.ok) {
-                document.getElementById('status').innerText = "✅ Success! Product added.";
-                document.getElementById('name').value = '';
-            } else {
-                document.getElementById('status').innerText = "❌ Error adding product.";
+                if (response.ok) {
+                    showStatus("✅ Success! Product added to store.", false);
+                    // Clear fields
+                    document.getElementById('name').value = '';
+                    document.getElementById('price').value = '';
+                    fileInput.value = '';
+                } else {
+                    // Specific Error handling as requested
+                    showStatus(`❌ Product error occurred: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showStatus("❌ Critical Error: Could not connect to API server.", true);
             }
-        }
-    </script>
+        };
+
+        // Read the file as a DataURL (Base64)
+        reader.readAsDataURL(file);
+    }
+</script>
+
 </body>
 </html>
