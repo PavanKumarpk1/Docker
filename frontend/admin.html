@@ -2,116 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store Management - Admin</title>
+    <title>Bulk Product Manager</title>
     <style>
-        :root {
-            --primary: #4a90e2;
-            --success: #28a745;
-            --danger: #dc3545;
-            --bg: #f8f9fa;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 40px; display: flex; justify-content: center; }
-        .admin-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { color: #333; margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input[type="text"], input[type="number"], input[type="file"] {
-            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;
-        }
+        body { font-family: sans-serif; padding: 40px; background: #f0f2f5; display: flex; justify-content: center; }
+        .admin-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        .section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        h2 { margin-top: 0; color: #333; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="file"] { margin-bottom: 15px; }
         button { 
-            width: 100%; background: var(--primary); color: white; border: none; padding: 12px; 
-            border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s;
+            width: 100%; padding: 12px; border-radius: 6px; border: none; 
+            cursor: pointer; font-weight: bold; transition: 0.3s;
         }
-        button:hover { background: #357abd; }
-        #status { margin-top: 20px; padding: 10px; border-radius: 6px; display: none; text-align: center; font-weight: bold; }
+        .btn-bulk { background: #6f42c1; color: white; }
+        .btn-bulk:hover { background: #59359a; }
+        #log { 
+            margin-top: 20px; max-height: 200px; overflow-y: auto; 
+            font-size: 13px; padding: 10px; background: #222; color: #0f0; border-radius: 4px; display: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="admin-card">
-    <h2>Add New Product</h2>
-    
-    <div class="form-group">
-        <label>Product Name</label>
-        <input type="text" id="name" placeholder="e.g., Cloud Server">
+    <h2>Bulk Product Upload</h2>
+    <div class="section">
+        <label>Upload JSON File</label>
+        <p style="font-size: 12px; color: #666;">File must be a JSON array of products.</p>
+        <input type="file" id="bulkFile" accept=".json">
+        <button class="btn-bulk" onclick="handleBulkUpload()">Process Bulk List</button>
     </div>
 
-    <div class="form-group">
-        <label>Price ($)</label>
-        <input type="number" id="price" placeholder="e.g., 99">
-    </div>
-
-    <div class="form-group">
-        <label>Upload Image</label>
-        <input type="file" id="fileInput" accept="image/*">
-    </div>
-
-    <button onclick="processAndUpload()">Create Product</button>
-
-    <div id="status"></div>
+    <div id="log"></div>
 </div>
 
 <script>
-    // Replace this with your actual Server IP
+    // Update with your actual Server IP
     const API_URL = "http://YOUR_SERVER_IP:8003/products";
 
-    function showStatus(msg, isError) {
-        const statusDiv = document.getElementById('status');
-        statusDiv.style.display = "block";
-        statusDiv.style.backgroundColor = isError ? "#f8d7da" : "#d4edda";
-        statusDiv.style.color = isError ? "#721c24" : "#155724";
-        statusDiv.innerText = msg;
+    function logMessage(msg) {
+        const logDiv = document.getElementById('log');
+        logDiv.style.display = "block";
+        logDiv.innerHTML += `<div>> ${msg}</div>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    function processAndUpload() {
-        const fileInput = document.getElementById('fileInput');
-        const name = document.getElementById('name').value;
-        const price = document.getElementById('price').value;
+    async function handleBulkUpload() {
+        const fileInput = document.getElementById('bulkFile');
         const file = fileInput.files[0];
-
-        // Basic Front-end validation
-        if (!name || !price || !file) {
-            showStatus("All fields are required!", true);
+        
+        if (!file) {
+            alert("Please select a JSON file first!");
             return;
         }
 
         const reader = new FileReader();
-
-        // Triggered when file reading is complete
-        reader.onloadend = async function() {
-            const base64Image = reader.result;
-
-            const payload = {
-                name: name,
-                price: parseInt(price),
-                image_url: base64Image
-            };
-
+        reader.onload = async function(e) {
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    showStatus("✅ Success! Product added to store.", false);
-                    // Clear fields
-                    document.getElementById('name').value = '';
-                    document.getElementById('price').value = '';
-                    fileInput.value = '';
-                } else {
-                    // Specific Error handling as requested
-                    showStatus(`❌ Product error occurred: ${response.status} ${response.statusText}`, true);
+                const products = JSON.parse(e.target.result);
+                
+                if (!Array.isArray(products)) {
+                    logMessage("Error: JSON must be an Array [{}, {}]");
+                    return;
                 }
+
+                logMessage(`Found ${products.length} products. Starting upload...`);
+
+                for (let item of products) {
+                    try {
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        });
+
+                        if (response.ok) {
+                            logMessage(`✅ Added: ${item.name}`);
+                        } else {
+                            logMessage(`❌ Product error occurred for ${item.name}: ${response.statusText}`);
+                        }
+                    } catch (err) {
+                        logMessage(`❌ Failed to reach API for ${item.name}`);
+                    }
+                }
+                logMessage("--- Bulk Processing Finished ---");
+
             } catch (err) {
-                showStatus("❌ Critical Error: Could not connect to API server.", true);
+                logMessage("❌ Error: Invalid JSON file format.");
             }
         };
-
-        // Read the file as a DataURL (Base64)
-        reader.readAsDataURL(file);
+        reader.readAsText(file);
     }
 </script>
 
