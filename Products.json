@@ -1,0 +1,14 @@
+[
+  {
+    "id": 101,
+    "name": "Cloud Architecture Blueprint",
+    "price": 29.99,
+    "stock": 50
+  },
+  {
+    "id": 102,
+    "name": "DevOps Automation Script Pack",
+    "price": 49.99,
+    "stock": 120
+  }
+]
